@@ -125,10 +125,10 @@ In addition to the tikzcd environment above, we also have a special environment 
 
 ```
 \\tikzcd-automata
-    \\node[state, initial]                   (q1) {q_1};
-    \\node[state, accepting, right of=q1]    (q2) {q_2};
-    \\node[state, right of=q2]               (q3) {q_3};
-    \\draw   (q1) edge[loop above]       node{0}     (q1)
+    \node[state, initial]                   (q1) {q_1};
+    \node[state, accepting, right of=q1]    (q2) {q_2};
+    \node[state, right of=q2]               (q3) {q_3};
+    \draw   (q1) edge[loop above]       node{0}     (q1)
             (q1) edge[above]            node{1}     (q2)
             (q2) edge[loop above]       node{1}     (q2)
             (q2) edge[bend left, above] node{0}     (q3)
