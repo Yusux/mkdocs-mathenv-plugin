@@ -3,7 +3,7 @@ import re
 
 from mkdocs.plugins import BasePlugin
 from mkdocs.structure.pages import Page
-from mkdocs.structure.files import Files, File
+from mkdocs.structure.files import Files
 from mkdocs.config.defaults import MkDocsConfig
 from mkdocs.config import base, config_options, Config
 from mkdocs.utils import log, copy_file
@@ -14,6 +14,15 @@ from .tikzcd import TikZcdObject
 from .markdown_utils import replace_standalone_words, replace_indented_block_start_with_options, get_indentation_level, return_to_indentation_level
 
 PLUGIN_DIR = os.path.dirname(os.path.realpath(__file__))
+
+def append(origin, new):
+    """
+    Append new to origin, if origin is None, return new
+    """
+    if origin is None:
+        return new
+    else:
+        return origin + new
 
 class _TheoremOptions(base.Config):
     enable = config_options.Type(bool, default=True)
@@ -76,11 +85,15 @@ class MathEnvPlugin(BasePlugin[MathEnvConfig]):
             """
             For each matched string, clean the first line label and transform it into html script 
             """
+            mode = matched.group("mode")
             options = matched.group("options")
             contents = matched.group("contents")
             first_line_indentation_level = get_indentation_level(matched.group("contents"))
 
-            print(first_line_indentation_level)
+            log.debug(first_line_indentation_level)
+
+            if mode == "automata":
+                options = append(options, r'->,>={Stealth[round]},shorten >=1pt,auto,node distance=2cm,on grid,semithick,inner sep=2pt,bend angle=50,initial text=')
 
             contents = [i for i in contents.splitlines()]
 
@@ -98,7 +111,7 @@ class MathEnvPlugin(BasePlugin[MathEnvConfig]):
             # The string should not be splitted into lines, since markdown parser won't recognize it
             svg_str = "".join(tikzcd.write_to_svg(self.config.tikzcd.cachefile).removeprefix("<?xml version='1.0' encoding='UTF-8'?>\n").splitlines())
 
-            return f"<center>{svg_str}</center>" + "\n" + "\n".join(contents_remain)
+            return f"<div class=tikzcd-svg align=center>{svg_str}</div>" + "\n" + "\n".join(contents_remain)
 
         if self.config.theorem.enable:
             markdown = re.sub(r"(?<!\\)\\theorem", "!!! success \"%s\"" % self.config.theorem.theorem, markdown)
@@ -141,6 +154,6 @@ class MathEnvPlugin(BasePlugin[MathEnvConfig]):
         for file in files:
             dest_file_path = os.path.join(config["site_dir"], file)
             src_file_path = os.path.join(PLUGIN_DIR, file)
-            print(src_file_path)
+            log.debug(f"loading svg: {src_file_path}")
             assert os.path.exists(src_file_path)
             copy_file(src_file_path, dest_file_path)

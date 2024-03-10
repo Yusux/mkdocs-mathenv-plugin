@@ -2,7 +2,7 @@
 
 A simple environment support on mkdocs-material for maths writing.
 
-Example & Usage: https://frightenedfoxcn.github.io/mkdocs-mathenv-plugin/
+Example & Usage: [Demo](https://yusux.github.io/mkdocs-mathenv-plugin/)
 
 ## Installation
 

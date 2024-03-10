@@ -1,5 +1,4 @@
 import os
-import re
 
 from mkdocs.utils import log
 
@@ -59,9 +58,9 @@ class TeXWriter:
         # use dvisvgm to transform pdf to svg
         pdf2svg_cmd = " ".join((
             "dvisvgm",
-            "-P --no-fonts",
+            "-P --no-styles --font-format=woff2",
             f"\"{tex_name}.pdf\"",
-            ">",
+            "2>",
             os.devnull
         ))
         log.info(f"running {pdf2svg_cmd}")
