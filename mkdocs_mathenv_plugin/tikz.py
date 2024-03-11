@@ -1,14 +1,15 @@
-from .tex import TeXWriter
+from .tex import TeXWriter, TeXWriterConfig
 
 from hashlib import sha256
 from mkdocs.utils import log
 import os
 
-class TikZcdObject:
+class TikZObject:
     """
     TikZcd object, to be generated to svg
     """
-    def __init__(self, options: str, contents: str) -> None:
+    def __init__(self, command: str, options: str, contents: str) -> None:
+        self.command = command.split("\\")[-1]
         self.options = options
         self.contents = contents
 
@@ -28,7 +29,7 @@ class TikZcdObject:
             os.chdir("..")
             return svg_str
 
-        writer = TeXWriter()
+        writer = TeXWriter(TeXWriterConfig(True)) if self.command == "tikzcd" else TeXWriter(TeXWriterConfig(False))
         writer.config.preamble = r'''
 \documentclass{standalone}
 \usepackage{tikz}
@@ -40,12 +41,16 @@ mark=at position 0 with {\coordinate (ta-base-1) at (0,1pt);
 mark=at position 1 with {\draw[#1] (ta-base-1) -- (0,1pt);
 \draw[#2] (ta-base-2) -- (0,-1pt);
 }}}}
+''' if self.command == "tikzcd" else r'''
+\documentclass[dvisvgm]{standalone}
+\usepackage{tikz}
+\usetikzlibrary{cd, decorations.markings, automata, positioning, arrows}
 '''
-        begin_command = r"\begin{tikzcd}[%s]" % self.options if self.options else r"\begin{tikzcd}"
+        begin_command = rf"\begin{{{self.command}}}[{self.options}]" if self.options else rf"\begin{{{self.command}}}"
         writer.create_tex_file("\n".join((
             begin_command,
             self.contents.strip(),
-            r'''\end{tikzcd} 
+            rf'''\end{{{self.command}}}
 '''
         )), filename)
 

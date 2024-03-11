@@ -10,7 +10,7 @@ from mkdocs.utils import log, copy_file
 
 from typing import Optional, Dict, Any
 
-from .tikzcd import TikZcdObject
+from .tikz import TikZObject
 from .markdown_utils import replace_standalone_words, replace_indented_block_start_with_options, get_indentation_level, return_to_indentation_level
 
 PLUGIN_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -25,7 +25,7 @@ def append(origin, new):
         return origin + new
 
 class _TheoremOptions(base.Config):
-    enable = config_options.Type(bool, default=True)
+    enable = config_options.Type(bool, default=False)
     theorem = config_options.Type(str, default="定理")
     lemma = config_options.Type(str, default="引理")
     proposition = config_options.Type(str, default="命题")
@@ -34,16 +34,21 @@ class _TheoremOptions(base.Config):
     exercise = config_options.Type(str, default="习题")
 
 class _TikZcdOptions(base.Config):
-    enable = config_options.Type(bool, default=True)
+    enable = config_options.Type(bool, default=False)
+    cachefile = config_options.Type(bool, default=True)
+
+class _TikZpictureOptions(base.Config):
+    enable = config_options.Type(bool, default=False)
     cachefile = config_options.Type(bool, default=True)
 
 class _AliasOptions(base.Config):
-    enable = config_options.Type(bool, default=True)
+    enable = config_options.Type(bool, default=False)
     alias_list = config_options.Type(Dict, default={})
 
 class MathEnvConfig(base.Config):
     theorem = config_options.SubConfig(_TheoremOptions)
     tikzcd = config_options.SubConfig(_TikZcdOptions)
+    tikzpicture = config_options.SubConfig(_TikZpictureOptions)
     alias = config_options.SubConfig(_AliasOptions)
 
 class MathEnvPlugin(BasePlugin[MathEnvConfig]):
@@ -81,10 +86,12 @@ class MathEnvPlugin(BasePlugin[MathEnvConfig]):
         """
         On markdown, extend the theorem expression
         """
-        def _replace_tikzcd(matched: re.Match[str]) -> str:
+        def _replace_tikz(matched: re.Match[str]) -> str:
             """
             For each matched string, clean the first line label and transform it into html script 
             """
+            leading = matched.group("leading")
+            command = matched.group("command")
             mode = matched.group("mode")
             options = matched.group("options")
             contents = matched.group("contents")
@@ -106,12 +113,12 @@ class MathEnvPlugin(BasePlugin[MathEnvConfig]):
                     break
 
             contents = "\n".join(contents)
-            tikzcd = TikZcdObject(options, contents)
+            tikzcd = TikZObject(command, options, contents)
 
             # The string should not be splitted into lines, since markdown parser won't recognize it
             svg_str = "".join(tikzcd.write_to_svg(self.config.tikzcd.cachefile).removeprefix("<?xml version='1.0' encoding='UTF-8'?>\n").splitlines())
 
-            return f"<div class=tikzcd-svg align=center>{svg_str}</div>" + "\n" + "\n".join(contents_remain)
+            return f"{leading}<div class=tikzcd-svg align=center>{svg_str}</div>" + "\n" + "\n".join(contents_remain)
 
         if self.config.theorem.enable:
             markdown = re.sub(r"(?<!\\)\\theorem", "!!! success \"%s\"" % self.config.theorem.theorem, markdown)
@@ -129,13 +136,12 @@ class MathEnvPlugin(BasePlugin[MathEnvConfig]):
             markdown = re.sub(r"\\\\exercise", r"\\exercise", markdown)
 
         if self.config.tikzcd.enable:
-            replaced_markdown = replace_indented_block_start_with_options(r"(?<!\\)\\tikzcd", _replace_tikzcd, markdown)
-
-            # stupid way to fix the recursion problem
-            while replaced_markdown != markdown:
-                markdown = replaced_markdown
-                replaced_markdown = replace_indented_block_start_with_options(r"(?<!\\)\\tikzcd", _replace_tikzcd, markdown)
+            markdown = replace_indented_block_start_with_options(r"(?<!\\)\\tikzcd", _replace_tikz, markdown)
             markdown = re.sub(r"\\\\tikzcd", r"\\tikzcd", markdown)
+
+        if self.config.tikzpicture.enable:
+            markdown = replace_indented_block_start_with_options(r"(?<!\\)\\tikzpicture", _replace_tikz, markdown)
+            markdown = re.sub(r"\\\\tikzpicture", r"\\tikzpicture", markdown)
 
         log.debug(f"markdown file: \n{markdown}")
 

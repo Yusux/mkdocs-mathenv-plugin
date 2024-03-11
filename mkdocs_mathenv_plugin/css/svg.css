@@ -1,15 +1,21 @@
-path[stroke="#000"] {
-	stroke: var(--md-default-fg-color);
+text[stroke="#000"],
+path[stroke="#000"],
+g[stroke="#000"] {
+    stroke: var(--md-default-fg-color);
 }
 
-path[stroke="#fff"] {
-	stroke: var(--md-default-bg-color);
+text[stroke="#fff"],
+path[stroke="#fff"],
+g[stroke="#fff"] {
+    stroke: var(--md-default-bg-color);
 }
 
+text[fill="#fff"],
 path[fill="#fff"] {
-	fill: var(--md-default-bg-color);
+    fill: var(--md-default-bg-color);
 }
 
+text:not([fill]),
 path:not([fill]) {
-	fill: var(--md-default-fg-color);
+    fill: var(--md-default-fg-color);
 }
