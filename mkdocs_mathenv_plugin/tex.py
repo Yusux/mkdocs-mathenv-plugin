@@ -41,7 +41,7 @@ class TeXWriter:
             if not self.config.usepdf:
                 program += " -no-pdf"
                 inter = "xdv"
-                dvisvgm_flag = "--no-styles --font-format=woff2"
+                dvisvgm_flag = "--no-fonts --font-format=woff2"
             else:
                 inter = "pdf"
                 dvisvgm_flag = "-P --no-styles --font-format=woff2"
